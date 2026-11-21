@@ -1,0 +1,56 @@
+# Managed by Ansible
+scope: {{ patroni_cluster_name }}
+name: {{ inventory_hostname }}
+
+restapi:
+  listen: 0.0.0.0:{{ patroni_restapi_port }}
+  connect_address: {{ database_ip }}:{{ patroni_restapi_port }}
+
+etcd3:
+  hosts: {% for h in groups['database'] %}{{ hostvars[h].ansible_host | default(h) }}:{{ etcd_client_port }}{{ ',' if not loop.last else '' }}{% endfor %}
+
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      parameters:
+{% for k, v in database_pg_parameters.items() %}
+        {{ k }}: {{ v }}
+{% endfor %}
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+  pg_hba:
+    - local all all peer
+    - host replication replicator 127.0.0.1/32 scram-sha-256
+    - host replication replicator {{ database_network_cidr }} scram-sha-256
+    - host all all 127.0.0.1/32 scram-sha-256
+    - host all all {{ database_network_cidr }} scram-sha-256
+
+postgresql:
+  listen: 0.0.0.0:{{ database_port }}
+  connect_address: {{ database_ip }}:{{ database_port }}
+  data_dir: {{ database_data_dir }}
+  bin_dir: {{ database_bin_dir }}
+  pgpass: /tmp/pgpass0
+  authentication:
+    superuser:
+      username: postgres
+      password: {{ patroni_superuser_password | to_json }}
+    replication:
+      username: replicator
+      password: {{ patroni_replication_password | to_json }}
+    rewind:
+      username: rewind_user
+      password: {{ patroni_rewind_password | to_json }}
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false

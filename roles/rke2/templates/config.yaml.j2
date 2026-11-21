@@ -1,0 +1,11 @@
+# Managed by Ansible
+token: {{ rke2_token | to_json }}
+node-ip: {{ k8s_node_ip }}
+{% if inventory_hostname != groups['k8s'][0] %}
+server: https://{{ k8s_api_address }}:{{ rke2_supervisor_port }}
+{% endif %}
+tls-san:
+  - {{ k8s_api_address }}
+{% for h in groups['k8s'] %}
+  - {{ hostvars[h].ansible_host | default(h) }}
+{% endfor %}

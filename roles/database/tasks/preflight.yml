@@ -1,0 +1,38 @@
+---
+- name: Stop if site values are still placeholders
+  ansible.builtin.assert:
+    that:
+      - "'CHANGE_ME' not in database_network_cidr"
+      - "'CHANGE_ME' not in patroni_superuser_password"
+      - "'CHANGE_ME' not in patroni_replication_password"
+      - "'CHANGE_ME' not in patroni_rewind_password"
+    fail_msg: "Fill in the CHANGE_ME values in inventory/group_vars/database.yml"
+    quiet: true
+
+- name: Check the number of database servers suits etcd
+  ansible.builtin.assert:
+    that:
+      - groups['database'] | length >= 3
+      - groups['database'] | length is odd
+    fail_msg: "etcd needs an odd number of servers, at least 3, in the database group"
+    quiet: true
+
+- name: Look for the bundle files on the controller
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  delegate_to: localhost
+  become: false
+  register: database_bundle_files
+  loop:
+    - "{{ bundle_dir }}/third-party-binaries/etcd-{{ etcd_version }}-linux-amd64.tar.gz"
+    - "{{ bundle_dir }}/patroni-python-wheels"
+
+- name: Stop if a bundle file is missing
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists
+    fail_msg: "Not found on the controller: {{ item.item }}. Check bundle_dir in inventory/group_vars/all.yml"
+    quiet: true
+  loop: "{{ database_bundle_files.results }}"
+  loop_control:
+    label: "{{ item.item }}"

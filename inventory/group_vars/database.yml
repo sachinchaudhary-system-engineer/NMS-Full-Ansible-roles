@@ -1,2 +1,11 @@
 ---
-# Variables for the database group
+# Variables for the database group. Fill in the CHANGE_ME values at the client site.
+
+patroni_cluster_name: nms-pg
+database_network_cidr: "CHANGE_ME_CIDR"   # network allowed to connect, for example 10.0.0.0/24
+database_data_dir: /var/lib/pgsql/data    # change this if the data is on a separate mount
+
+# Passwords. Replace every CHANGE_ME. Real passwords belong in the vault.
+patroni_superuser_password: "CHANGE_ME"
+patroni_replication_password: "CHANGE_ME"
+patroni_rewind_password: "CHANGE_ME"

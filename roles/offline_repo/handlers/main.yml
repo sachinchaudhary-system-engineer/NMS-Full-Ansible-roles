@@ -1,2 +1,4 @@
 ---
-# handlers for the offline_repo role
+- name: Refresh dnf metadata
+  ansible.builtin.command: dnf -y makecache --refresh
+  changed_when: true

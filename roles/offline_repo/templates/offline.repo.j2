@@ -1,0 +1,5 @@
+[{{ offline_repo_name }}]
+name=Offline repository
+baseurl={{ offline_repo_url }}
+enabled=1
+gpgcheck={{ 1 if offline_repo_gpgcheck else 0 }}

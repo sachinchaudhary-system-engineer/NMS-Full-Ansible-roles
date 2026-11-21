@@ -1,2 +1,58 @@
 ---
-# TODO: tasks for the loadbalancer role (see README, step-by-step plan)
+- name: Stop if site values are still placeholders
+  ansible.builtin.assert:
+    that:
+      - "'CHANGE_ME' not in lb_vip"
+      - "'CHANGE_ME' not in lb_interface"
+      - "'CHANGE_ME' not in lb_auth_pass"
+    fail_msg: "Fill in lb_vip, lb_interface and lb_auth_pass in inventory/group_vars/loadbalancer.yml"
+    quiet: true
+
+- name: Check every backend group exists in the inventory
+  ansible.builtin.assert:
+    that:
+      - item.backend_group in groups
+      - groups[item.backend_group] | length > 0
+    fail_msg: "Backend group {{ item.backend_group }} (service {{ item.name }}) is missing or empty in the inventory"
+    quiet: true
+  loop: "{{ lb_services }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Install haproxy and keepalived
+  ansible.builtin.dnf:
+    name:
+      - haproxy
+      - keepalived
+    state: present
+
+- name: Write the haproxy configuration
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: "0644"
+    validate: haproxy -c -f %s
+  notify: Reload haproxy
+
+- name: Write the keepalived configuration
+  ansible.builtin.template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart keepalived
+
+- name: Enable and start haproxy
+  ansible.builtin.service:
+    name: haproxy
+    enabled: true
+    state: started
+
+- name: Enable and start keepalived
+  ansible.builtin.service:
+    name: keepalived
+    enabled: true
+    state: started

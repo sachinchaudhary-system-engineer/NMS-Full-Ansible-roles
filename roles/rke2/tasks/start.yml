@@ -1,0 +1,37 @@
+---
+- name: Start RKE2 on the first node
+  ansible.builtin.systemd_service:
+    name: rke2-server
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: inventory_hostname == groups['k8s'][0]
+
+- name: Wait until the first node accepts joins
+  ansible.builtin.wait_for:
+    host: "{{ k8s_node_ip }}"
+    port: "{{ rke2_supervisor_port }}"
+    timeout: 900
+  when: inventory_hostname == groups['k8s'][0]
+
+- name: Start RKE2 on the other nodes
+  ansible.builtin.systemd_service:
+    name: rke2-server
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: inventory_hostname != groups['k8s'][0]
+
+- name: Wait until every node is Ready
+  ansible.builtin.command: >-
+    /var/lib/rancher/rke2/bin/kubectl
+    --kubeconfig /etc/rancher/rke2/rke2.yaml
+    get nodes --no-headers
+  register: rke2_nodes
+  until: >-
+    (rke2_nodes.stdout_lines | select('search', ' Ready ') | list | length)
+    == (groups['k8s'] | length)
+  retries: 60
+  delay: 10
+  changed_when: false
+  when: inventory_hostname == groups['k8s'][0]

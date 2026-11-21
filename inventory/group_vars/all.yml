@@ -13,3 +13,6 @@ offline_repo_dir: /opt/offline-repo
 
 # Names and addresses of all servers, written into /etc/hosts when no DNS exists
 # (filled in during step 3 of the plan)
+
+# Folder with the unpacked offline bundle, on the controller (the machine running Ansible)
+bundle_dir: "{{ playbook_dir }}/../bundle"

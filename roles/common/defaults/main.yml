@@ -1,2 +1,22 @@
 ---
-# default variables for the common role
+common_packages:
+  - chrony
+  - tcpdump
+  - bind-utils
+  - rsync
+  - jq
+  - unzip
+  - tar
+  - lsof
+  - net-tools
+  - vim-enhanced
+  - python3
+  - python3-pip
+  - python3-libselinux
+  - python3-dnf-plugin-versionlock
+
+# Hostname becomes <inventory name>.<dns_domain>
+common_set_hostname: true
+
+# Write every inventory host into /etc/hosts (for sites without DNS)
+common_manage_hosts_file: true

@@ -1,2 +1,12 @@
 ---
-# TODO: tasks for the database role (see README, step-by-step plan)
+- name: Check the settings and the bundle
+  ansible.builtin.import_tasks: preflight.yml
+
+- name: Install PostgreSQL
+  ansible.builtin.import_tasks: packages.yml
+
+- name: Set up etcd
+  ansible.builtin.import_tasks: etcd.yml
+
+- name: Set up Patroni
+  ansible.builtin.import_tasks: patroni.yml

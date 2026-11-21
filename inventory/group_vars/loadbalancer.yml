@@ -1,2 +1,27 @@
 ---
-# Variables for the loadbalancer group
+# Variables for the loadbalancer group. Fill in the CHANGE_ME values at the client site.
+
+lb_vip: "CHANGE_ME_VIP"                  # virtual IP, for example 10.0.0.10
+lb_vip_prefix: 24                        # netmask length of the VIP network
+lb_interface: "CHANGE_ME_INTERFACE"      # for example eth0 or ens192
+lb_router_id: 51                         # 1-255, must be the same on both balancers
+lb_auth_pass: "CHANGE_ME"                # up to 8 characters
+
+# Ports to balance. Each one forwards to every host in backend_group.
+lb_services:
+  - name: k8s-api
+    port: 6443
+    backend_group: k8s
+    backend_port: 6443
+  - name: rke2-supervisor
+    port: 9345
+    backend_group: k8s
+    backend_port: 9345
+  - name: ingress-http
+    port: 80
+    backend_group: k8s
+    backend_port: 80
+  - name: ingress-https
+    port: 443
+    backend_group: k8s
+    backend_port: 443

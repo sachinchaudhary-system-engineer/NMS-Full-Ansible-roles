@@ -1,0 +1,40 @@
+# Managed by Ansible
+{% set lb_hosts = groups['loadbalancer'] %}
+{% set my_ip = hostvars[inventory_hostname].ansible_host | default(inventory_hostname) %}
+{% set is_first = inventory_hostname == lb_hosts[0] %}
+global_defs {
+    router_id {{ inventory_hostname }}
+}
+
+vrrp_script chk_haproxy {
+    script "/usr/bin/pgrep -x haproxy"
+    interval 2
+    fall 2
+    rise 2
+}
+
+vrrp_instance VI_1 {
+    state {{ 'MASTER' if is_first else 'BACKUP' }}
+    interface {{ lb_interface }}
+    virtual_router_id {{ lb_router_id }}
+    priority {{ lb_priority_master if is_first else lb_priority_backup }}
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass {{ lb_auth_pass }}
+    }
+    unicast_src_ip {{ my_ip }}
+{% if lb_hosts | length > 1 %}
+    unicast_peer {
+{% for h in lb_hosts if h != inventory_hostname %}
+        {{ hostvars[h].ansible_host | default(h) }}
+{% endfor %}
+    }
+{% endif %}
+    virtual_ipaddress {
+        {{ lb_vip }}/{{ lb_vip_prefix }} dev {{ lb_interface }}
+    }
+    track_script {
+        chk_haproxy
+    }
+}

@@ -1,0 +1,11 @@
+---
+- name: Install the PostgreSQL packages
+  ansible.builtin.dnf:
+    name: "{{ database_packages }}"
+    state: present
+
+- name: Keep the postgresql service off, Patroni starts PostgreSQL itself
+  ansible.builtin.service:
+    name: postgresql
+    enabled: false
+    state: stopped

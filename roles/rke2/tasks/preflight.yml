@@ -1,0 +1,37 @@
+---
+- name: Stop if site values are still placeholders
+  ansible.builtin.assert:
+    that:
+      - "'CHANGE_ME' not in k8s_api_address"
+      - "'CHANGE_ME' not in rke2_token"
+    fail_msg: "Fill in k8s_api_address and rke2_token in inventory/group_vars/k8s.yml"
+    quiet: true
+
+- name: Check the number of Kubernetes servers suits etcd
+  ansible.builtin.assert:
+    that:
+      - groups['k8s'] | length is odd
+    fail_msg: "RKE2 servers need an odd number of nodes (1, 3 or 5) in the k8s group"
+    quiet: true
+
+- name: Look for the RKE2 files on the controller
+  ansible.builtin.stat:
+    path: "{{ bundle_dir }}/third-party-binaries/{{ item }}"
+  delegate_to: localhost
+  become: false
+  register: rke2_bundle_files
+  loop:
+    - rke2.linux-amd64.tar.gz
+    - sha256sum-amd64.txt
+    - rke2-install.sh
+    - rke2-images.linux-amd64.tar.zst
+
+- name: Stop if an RKE2 file is missing
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists
+    fail_msg: "Not found on the controller: {{ item.item }}. Check bundle_dir in inventory/group_vars/all.yml"
+    quiet: true
+  loop: "{{ rke2_bundle_files.results }}"
+  loop_control:
+    label: "{{ item.item }}"

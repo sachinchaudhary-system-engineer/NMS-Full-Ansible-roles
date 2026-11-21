@@ -1,2 +1,3 @@
 ---
-# default variables for the loadbalancer role
+lb_priority_master: 150
+lb_priority_backup: 100

@@ -1,0 +1,5 @@
+---
+- name: Point every server at the offline repository
+  hosts: all
+  roles:
+    - offline_repo

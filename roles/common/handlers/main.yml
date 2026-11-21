@@ -1,2 +1,5 @@
 ---
-# handlers for the common role
+- name: Restart chronyd
+  ansible.builtin.service:
+    name: chronyd
+    state: restarted

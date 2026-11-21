@@ -1,6 +1,5 @@
 ---
-- name: Load balancers (HAProxy and Keepalived)
+- name: Set up the load balancers
   hosts: loadbalancer
-  become: true
   roles:
     - loadbalancer

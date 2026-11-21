@@ -1,0 +1,11 @@
+# Managed by Ansible
+name: {{ inventory_hostname }}
+data-dir: {{ etcd_data_dir }}
+listen-peer-urls: http://{{ database_ip }}:{{ etcd_peer_port }}
+listen-client-urls: http://{{ database_ip }}:{{ etcd_client_port }},http://127.0.0.1:{{ etcd_client_port }}
+initial-advertise-peer-urls: http://{{ database_ip }}:{{ etcd_peer_port }}
+advertise-client-urls: http://{{ database_ip }}:{{ etcd_client_port }}
+initial-cluster-token: {{ etcd_token }}
+initial-cluster-state: new
+initial-cluster: {% for h in groups['database'] %}{{ h }}=http://{{ hostvars[h].ansible_host | default(h) }}:{{ etcd_peer_port }}{{ ',' if not loop.last else '' }}{% endfor %}
+

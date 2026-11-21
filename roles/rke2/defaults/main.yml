@@ -1,0 +1,5 @@
+---
+rke2_artifacts_dir: /opt/rke2-artifacts
+rke2_images_dir: /var/lib/rancher/rke2/agent/images
+rke2_supervisor_port: 9345
+k8s_node_ip: "{{ ansible_host | default(inventory_hostname) }}"

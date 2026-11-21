@@ -1,0 +1,45 @@
+---
+- name: Create the artifacts folder
+  ansible.builtin.file:
+    path: "{{ rke2_artifacts_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copy the RKE2 install files from the bundle
+  ansible.builtin.copy:
+    src: "{{ bundle_dir }}/third-party-binaries/{{ item }}"
+    dest: "{{ rke2_artifacts_dir }}/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - rke2.linux-amd64.tar.gz
+    - sha256sum-amd64.txt
+    - rke2-install.sh
+
+- name: Create the RKE2 images folder
+  ansible.builtin.file:
+    path: "{{ rke2_images_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copy the RKE2 images from the bundle
+  ansible.builtin.copy:
+    src: "{{ bundle_dir }}/third-party-binaries/rke2-images.linux-amd64.tar.zst"
+    dest: "{{ rke2_images_dir }}/rke2-images.linux-amd64.tar.zst"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install RKE2 from the files, no internet
+  ansible.builtin.command: "sh {{ rke2_artifacts_dir }}/rke2-install.sh"
+  environment:
+    INSTALL_RKE2_ARTIFACT_PATH: "{{ rke2_artifacts_dir }}"
+    INSTALL_RKE2_METHOD: tar
+    INSTALL_RKE2_TYPE: server
+  args:
+    creates: /usr/local/bin/rke2

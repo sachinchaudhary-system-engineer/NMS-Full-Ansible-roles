@@ -1,2 +1,55 @@
 ---
-# TODO: tasks for the common role (see README, step-by-step plan)
+# --- Packages ---
+- name: Install the base packages
+  ansible.builtin.dnf:
+    name: "{{ common_packages }}"
+    state: present
+
+# --- Hostname ---
+- name: Set the hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}.{{ dns_domain }}"
+  when: common_set_hostname
+
+# --- Timezone ---
+- name: Read the current timezone
+  ansible.builtin.command: timedatectl show -p Timezone --value
+  register: common_tz_now
+  changed_when: false
+
+- name: Set the timezone
+  ansible.builtin.command: "timedatectl set-timezone {{ timezone }}"
+  when: common_tz_now.stdout != timezone
+
+# --- Time sync ---
+- name: Write the chrony configuration
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /etc/chrony.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: ntp_servers | length > 0
+  notify: Restart chronyd
+
+- name: Warn when no time server is set
+  ansible.builtin.debug:
+    msg: "ntp_servers is empty, so chrony keeps its default configuration."
+  when: ntp_servers | length == 0
+
+- name: Enable and start chronyd
+  ansible.builtin.service:
+    name: chronyd
+    enabled: true
+    state: started
+
+# --- /etc/hosts ---
+- name: Add every inventory server to /etc/hosts
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED HOSTS"
+    block: |
+      {% for h in groups['all'] %}
+      {{ hostvars[h].ansible_host | default(h) }} {{ h }}.{{ dns_domain }} {{ h }}
+      {% endfor %}
+  when: common_manage_hosts_file

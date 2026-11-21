@@ -1,2 +1,60 @@
 ---
-# TODO: tasks for the k8s_prereq role (see README, step-by-step plan)
+# --- Packages ---
+- name: Install the Kubernetes prerequisite packages
+  ansible.builtin.dnf:
+    name: "{{ k8s_prereq_packages }}"
+    state: present
+
+# --- Swap ---
+- name: Check whether swap is on
+  ansible.builtin.command: swapon --show --noheadings
+  register: k8s_prereq_swap
+  changed_when: false
+
+- name: Turn swap off now
+  ansible.builtin.command: swapoff -a
+  when: k8s_prereq_swap.stdout | length > 0
+
+- name: Keep swap off after a reboot
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^([^#].*\sswap\s.*)$'
+    replace: '# \1'
+
+# --- Kernel modules ---
+- name: Load the modules at every boot
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      {% for m in k8s_prereq_modules %}
+      {{ m }}
+      {% endfor %}
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Load the modules now
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ k8s_prereq_modules }}"
+
+# --- Sysctl ---
+- name: Set the kernel network settings
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.d/90-k8s.conf
+    sysctl_set: true
+    reload: true
+    state: present
+  loop: "{{ k8s_prereq_sysctl | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+# --- Final check ---
+- name: Check swap is off
+  ansible.builtin.command: swapon --show --noheadings
+  register: k8s_prereq_swap_after
+  changed_when: false
+  failed_when: k8s_prereq_swap_after.stdout | length > 0

@@ -1,6 +1,5 @@
 ---
-- name: Database servers (PostgreSQL, etcd, Patroni, pgBackRest)
+- name: Set up the database cluster
   hosts: database
-  become: true
   roles:
     - database

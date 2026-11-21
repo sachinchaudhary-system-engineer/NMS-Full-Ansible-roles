@@ -1,8 +1,9 @@
 ---
-# Runs everything in order. Use the numbered playbooks to run one step at a time.
+- import_playbook: 00-offline-repo.yml
 - import_playbook: 01-common.yml
 - import_playbook: 02-loadbalancer.yml
 - import_playbook: 03-k8s-prereq.yml
+- import_playbook: 07-rke2.yml
 - import_playbook: 04-backup.yml
 - import_playbook: 05-database.yml
 - import_playbook: 06-registry.yml

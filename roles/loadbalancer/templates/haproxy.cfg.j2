@@ -1,0 +1,27 @@
+# Managed by Ansible
+global
+    log /dev/log local0
+    maxconn 4000
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    mode tcp
+    log global
+    option tcplog
+    timeout connect 5s
+    timeout client 50s
+    timeout server 50s
+{% for svc in lb_services %}
+
+frontend {{ svc.name }}
+    bind *:{{ svc.port }}
+    default_backend {{ svc.name }}
+
+backend {{ svc.name }}
+    balance roundrobin
+{% for h in groups[svc.backend_group] %}
+    server {{ h }} {{ hostvars[h].ansible_host | default(h) }}:{{ svc.backend_port }} check
+{% endfor %}
+{% endfor %}

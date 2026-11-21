@@ -1,0 +1,12 @@
+---
+- name: Check the settings and the bundle
+  ansible.builtin.import_tasks: preflight.yml
+
+- name: Install RKE2 from the bundle
+  ansible.builtin.import_tasks: install.yml
+
+- name: Write the RKE2 configuration
+  ansible.builtin.import_tasks: config.yml
+
+- name: Start the cluster
+  ansible.builtin.import_tasks: start.yml

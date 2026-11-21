@@ -1,2 +1,8 @@
 ---
-# Variables for the k8s group
+# Variables for the k8s group. Fill in the CHANGE_ME values at the client site.
+
+# Address the nodes join through. Use the load balancer VIP (lb_vip).
+k8s_api_address: "CHANGE_ME_API_ADDRESS"
+
+# Shared secret for joining nodes. Real values belong in the vault.
+rke2_token: "CHANGE_ME"

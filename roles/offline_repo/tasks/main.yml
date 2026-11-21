@@ -1,2 +1,50 @@
 ---
-# TODO: tasks for the offline_repo role (see README, step-by-step plan)
+- name: Stop if the repository URL was not filled in
+  ansible.builtin.assert:
+    that:
+      - "'CHANGE_ME' not in offline_repo_url"
+    fail_msg: "Set offline_repo_url in inventory/group_vars/all.yml"
+    quiet: true
+
+- name: Find the existing repository files
+  ansible.builtin.find:
+    paths: /etc/yum.repos.d
+    patterns: "*.repo"
+    excludes: "{{ offline_repo_name }}.repo"
+  register: offline_repo_existing
+  when: offline_repo_disable_others
+
+- name: Disable every other repository
+  ansible.builtin.replace:
+    path: "{{ item.path }}"
+    regexp: '^enabled\s*=\s*1'
+    replace: 'enabled=0'
+  loop: "{{ offline_repo_existing.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: offline_repo_disable_others
+  notify: Refresh dnf metadata
+
+- name: Write the offline repository file
+  ansible.builtin.template:
+    src: offline.repo.j2
+    dest: "/etc/yum.repos.d/{{ offline_repo_name }}.repo"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Refresh dnf metadata
+
+- name: Apply the repository change now
+  ansible.builtin.meta: flush_handlers
+
+- name: List the enabled repositories
+  ansible.builtin.command: dnf -q repolist --enabled
+  register: offline_repo_list
+  changed_when: false
+
+- name: Check that the offline repository is enabled
+  ansible.builtin.assert:
+    that:
+      - offline_repo_name in offline_repo_list.stdout
+    fail_msg: "The offline repository is not enabled. Check offline_repo_url and that the repo server is running."
+    quiet: true

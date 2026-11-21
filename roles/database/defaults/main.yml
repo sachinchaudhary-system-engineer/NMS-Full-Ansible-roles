@@ -1,2 +1,26 @@
 ---
-# default variables for the database role
+database_packages:
+  - postgresql-server
+  - postgresql
+  - postgresql-contrib
+
+database_bin_dir: /usr/bin
+database_port: 5432
+database_ip: "{{ ansible_host | default(inventory_hostname) }}"
+
+database_pg_parameters:
+  max_connections: 200
+  password_encryption: scram-sha-256
+
+# Must match ETCD_VERSION in scripts/pinned-versions.env
+etcd_version: v3.7.4
+etcd_install_dir: /opt
+etcd_data_dir: /var/lib/etcd
+etcd_client_port: 2379
+etcd_peer_port: 2380
+etcd_token: nms-etcd
+
+patroni_venv: /opt/patroni
+patroni_wheels_dir: /opt/patroni-wheels
+patroni_config_dir: /etc/patroni
+patroni_restapi_port: 8008

@@ -1,2 +1,6 @@
 ---
-# default variables for the offline_repo role
+offline_repo_name: offline
+# offline_repo_url is set in inventory/group_vars/all.yml
+offline_repo_gpgcheck: false
+# Turn off every other .repo file so servers never look for the internet
+offline_repo_disable_others: true
