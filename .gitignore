@@ -21,3 +21,4 @@ vault/*
 __pycache__/
 *.log
 *.log
+*.sha256
