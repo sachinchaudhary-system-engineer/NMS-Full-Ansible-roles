@@ -1,0 +1,6 @@
+---
+- name: Validate every server after a run
+  hosts: all
+  become: true
+  roles:
+    - validate

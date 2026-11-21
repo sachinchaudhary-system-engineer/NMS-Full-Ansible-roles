@@ -1,0 +1,15 @@
+---
+# Variables for every server
+
+ansible_user: ansible            # the admin user that exists on every server
+timezone: UTC
+dns_domain: client.local
+
+# Internal time source(s). Fill in your own, for example ["10.0.0.5"]
+ntp_servers: []
+
+# Where the offline repository lives on every server
+offline_repo_dir: /opt/offline-repo
+
+# Names and addresses of all servers, written into /etc/hosts when no DNS exists
+# (filled in during step 3 of the plan)

@@ -1,0 +1,6 @@
+---
+- name: Prepare Kubernetes nodes (RKE2 is installed in a later step)
+  hosts: k8s
+  become: true
+  roles:
+    - k8s_prereq

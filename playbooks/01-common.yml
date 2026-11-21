@@ -1,0 +1,7 @@
+---
+- name: Offline repository and common baseline on every server
+  hosts: all
+  become: true
+  roles:
+    - offline_repo
+    - common

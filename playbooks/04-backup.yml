@@ -1,0 +1,6 @@
+---
+- name: Backup server (MinIO)
+  hosts: backup
+  become: true
+  roles:
+    - minio

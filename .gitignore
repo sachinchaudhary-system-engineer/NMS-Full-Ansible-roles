@@ -1,0 +1,23 @@
+# Offline bundle files are large and are never committed
+bundle/*
+!bundle/README.md
+
+# Secrets
+vault/*
+!vault/README.md
+.vault_pass
+*.vault_pass
+
+# Packages and archives
+*.rpm
+*.whl
+*.tar
+*.tar.gz
+*.zst
+
+# Misc
+*.retry
+.venv/
+__pycache__/
+*.log
+*.log

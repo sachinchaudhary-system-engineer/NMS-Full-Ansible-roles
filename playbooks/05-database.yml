@@ -1,0 +1,6 @@
+---
+- name: Database servers (PostgreSQL, etcd, Patroni, pgBackRest)
+  hosts: database
+  become: true
+  roles:
+    - database
