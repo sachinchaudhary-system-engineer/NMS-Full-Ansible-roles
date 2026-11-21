@@ -1,0 +1,36 @@
+---
+- name: Check swap is off
+  ansible.builtin.command: swapon --show --noheadings
+  register: validate_swap
+  changed_when: false
+  failed_when: validate_swap.stdout | length > 0
+
+- name: Check the kernel modules are loaded
+  ansible.builtin.command: "grep -qw {{ item }} /proc/modules"
+  loop:
+    - overlay
+    - br_netfilter
+  changed_when: false
+
+- name: Check rke2-server is active
+  ansible.builtin.command: systemctl is-active rke2-server
+  changed_when: false
+
+- name: Check every node is Ready
+  ansible.builtin.command: >-
+    /var/lib/rancher/rke2/bin/kubectl
+    --kubeconfig /etc/rancher/rke2/rke2.yaml
+    get nodes --no-headers
+  register: validate_nodes
+  until: >-
+    (validate_nodes.stdout_lines | select('search', ' Ready ') | list | length)
+    == (groups['k8s'] | length)
+  retries: 12
+  delay: 10
+  changed_when: false
+  when: inventory_hostname == groups['k8s'][0]
+
+- name: Show the nodes
+  ansible.builtin.debug:
+    var: validate_nodes.stdout_lines
+  when: inventory_hostname == groups['k8s'][0]

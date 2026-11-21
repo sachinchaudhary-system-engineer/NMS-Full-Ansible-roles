@@ -1,6 +1,5 @@
 ---
-- name: Validate every server after a run
+- name: Check the whole installation (reads only, changes nothing)
   hosts: all
-  become: true
   roles:
     - validate

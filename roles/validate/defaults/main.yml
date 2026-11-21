@@ -1,2 +1,6 @@
 ---
-# default variables for the validate role
+validate_repo_name: offline
+validate_check_vip: true
+validate_ip: "{{ ansible_host | default(inventory_hostname) }}"
+validate_etcd_port: 2379
+validate_patroni_port: 8008

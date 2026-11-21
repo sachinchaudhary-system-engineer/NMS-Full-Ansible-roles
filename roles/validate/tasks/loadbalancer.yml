@@ -1,0 +1,43 @@
+---
+- name: Check haproxy and keepalived are active
+  ansible.builtin.command: "systemctl is-active {{ item }}"
+  loop:
+    - haproxy
+    - keepalived
+  changed_when: false
+
+- name: List the listening ports
+  ansible.builtin.command: ss -ltn
+  register: validate_ports
+  changed_when: false
+
+- name: Check every service port is listening
+  ansible.builtin.assert:
+    that:
+      - (":" ~ item.port ~ " ") in validate_ports.stdout
+    fail_msg: "Port {{ item.port }} ({{ item.name }}) is not listening on {{ inventory_hostname }}"
+    quiet: true
+  loop: "{{ lb_services }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Look for the virtual IP on this server
+  ansible.builtin.command: ip -o addr show
+  register: validate_addrs
+  changed_when: false
+  when: validate_check_vip
+
+- name: Remember whether this server holds the virtual IP
+  ansible.builtin.set_fact:
+    validate_has_vip: "{{ (lb_vip ~ '/') in validate_addrs.stdout }}"
+  when: validate_check_vip
+
+- name: Check exactly one balancer holds the virtual IP
+  ansible.builtin.assert:
+    that:
+      - groups['loadbalancer'] | map('extract', hostvars, 'validate_has_vip') | select | list | length == 1
+    fail_msg: "The virtual IP {{ lb_vip }} must be on exactly one load balancer"
+    quiet: true
+  when:
+    - validate_check_vip
+    - inventory_hostname == groups['loadbalancer'][0]

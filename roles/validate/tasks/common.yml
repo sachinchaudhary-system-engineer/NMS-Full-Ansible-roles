@@ -1,0 +1,20 @@
+---
+- name: List the enabled repositories
+  ansible.builtin.command: dnf -q repolist --enabled
+  register: validate_repos
+  changed_when: false
+
+- name: Check the offline repository is enabled
+  ansible.builtin.assert:
+    that:
+      - validate_repo_name in validate_repos.stdout
+    fail_msg: "The offline repository is not enabled on {{ inventory_hostname }}"
+    quiet: true
+
+- name: Check chronyd is active
+  ansible.builtin.command: systemctl is-active chronyd
+  changed_when: false
+
+- name: Check the server name resolves
+  ansible.builtin.command: "getent hosts {{ inventory_hostname }}.{{ dns_domain }}"
+  changed_when: false

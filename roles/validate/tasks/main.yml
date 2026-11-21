@@ -1,2 +1,15 @@
 ---
-# TODO: tasks for the validate role (see README, step-by-step plan)
+- name: Checks for every server
+  ansible.builtin.include_tasks: common.yml
+
+- name: Checks for the load balancers
+  ansible.builtin.include_tasks: loadbalancer.yml
+  when: inventory_hostname in groups.get('loadbalancer', [])
+
+- name: Checks for the database servers
+  ansible.builtin.include_tasks: database.yml
+  when: inventory_hostname in groups.get('database', [])
+
+- name: Checks for the Kubernetes nodes
+  ansible.builtin.include_tasks: k8s.yml
+  when: inventory_hostname in groups.get('k8s', [])

@@ -1,0 +1,40 @@
+---
+- name: Check etcd and Patroni are active
+  ansible.builtin.command: "systemctl is-active {{ item }}"
+  loop:
+    - etcd
+    - patroni
+  changed_when: false
+
+- name: Check the etcd cluster is healthy
+  ansible.builtin.command: "/usr/local/bin/etcdctl --endpoints={{ validate_etcd_endpoints }} endpoint health"
+  vars:
+    validate_etcd_endpoints: "{% for h in groups['database'] %}http://{{ hostvars[h].ansible_host | default(h) }}:{{ validate_etcd_port }}{{ ',' if not loop.last else '' }}{% endfor %}"
+  changed_when: false
+
+- name: List the etcd members
+  ansible.builtin.command: "/usr/local/bin/etcdctl --endpoints=http://127.0.0.1:{{ validate_etcd_port }} member list"
+  register: validate_etcd_members
+  changed_when: false
+
+- name: Check etcd has one member per database server
+  ansible.builtin.assert:
+    that:
+      - validate_etcd_members.stdout_lines | length == groups['database'] | length
+    fail_msg: "etcd has {{ validate_etcd_members.stdout_lines | length }} members, expected {{ groups['database'] | length }}"
+    quiet: true
+
+- name: Read the cluster state from Patroni
+  ansible.builtin.uri:
+    url: "http://{{ validate_ip }}:{{ validate_patroni_port }}/cluster"
+    return_content: true
+  register: validate_cluster
+
+- name: Check the Patroni cluster is healthy
+  ansible.builtin.assert:
+    that:
+      - validate_cluster.json.members | length == groups['database'] | length
+      - validate_cluster.json.members | selectattr('role', 'in', ['leader', 'primary']) | list | length == 1
+      - validate_cluster.json.members | rejectattr('state', 'in', ['running', 'streaming']) | list | length == 0
+    fail_msg: "Patroni cluster is not healthy: {{ validate_cluster.json.members }}"
+    quiet: true
