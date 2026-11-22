@@ -8,6 +8,7 @@ RELEASE=${1:?usage: scripts/06-pack-offline-bundle.sh RELEASE   (for example 202
 # Put this repository into the bundle as a Git bundle
 mkdir -p bundle/ansible-repo-git-bundle
 git bundle create "bundle/ansible-repo-git-bundle/infra-ansible-$RELEASE.bundle" --all
+mkdir -p bundle/ansible-repo-git-bundle && git archive --format=tar.gz --prefix=NMS-Full-Ansible-roles/ -o "bundle/ansible-repo-git-bundle/ansible-project-$RELEASE.tar.gz" HEAD
 
 ( cd bundle && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS )
 
