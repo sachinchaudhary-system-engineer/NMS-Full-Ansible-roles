@@ -1,0 +1,90 @@
+---
+- name: Create the Harbor HTTPS folder
+  ansible.builtin.file:
+    path: "{{ harbor_tls_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: tls_active | bool
+
+- name: Copy the HTTPS files for Harbor
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ harbor_tls_dir }}/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: "{{ tls_cert_file }}", dest: server.crt, mode: "0644" }
+    - { src: "{{ tls_key_file }}", dest: server.key, mode: "0600" }
+  loop_control:
+    label: "{{ item.dest }}"
+  when: tls_active | bool
+
+- name: Create the Harbor data folder
+  ansible.builtin.file:
+    path: "{{ harbor_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copy the Harbor installer from the bundle
+  ansible.builtin.copy:
+    src: "{{ bundle_dir }}/third-party-binaries/harbor-offline-installer-{{ harbor_version }}.tgz"
+    dest: "{{ harbor_unpack_dir }}/harbor-offline-installer-{{ harbor_version }}.tgz"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Unpack the Harbor installer
+  ansible.builtin.unarchive:
+    src: "{{ harbor_unpack_dir }}/harbor-offline-installer-{{ harbor_version }}.tgz"
+    dest: "{{ harbor_unpack_dir }}"
+    remote_src: true
+    creates: "{{ harbor_dir }}/install.sh"
+
+- name: Copy the Harbor config helper
+  ansible.builtin.copy:
+    src: set_harbor_config.py
+    dest: "{{ harbor_unpack_dir }}/set_harbor_config.py"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Write harbor.yml from the template in the installer
+  ansible.builtin.command: "/usr/bin/python3 {{ harbor_unpack_dir }}/set_harbor_config.py {{ harbor_dir }}/harbor.yml.tmpl {{ harbor_dir }}/harbor.yml"
+  environment:
+    HARBOR_HOSTNAME: "{{ harbor_hostname }}"
+    HARBOR_HTTP_PORT: "{{ harbor_http_port }}"
+    HARBOR_HTTPS_PORT: "{{ harbor_https_port }}"
+    HARBOR_CERT: "{{ (harbor_tls_dir ~ '/server.crt') if tls_active | bool else '' }}"
+    HARBOR_KEY: "{{ (harbor_tls_dir ~ '/server.key') if tls_active | bool else '' }}"
+    HARBOR_ADMIN_PASSWORD: "{{ harbor_admin_password }}"
+    HARBOR_DB_PASSWORD: "{{ harbor_db_password }}"
+    HARBOR_DATA_DIR: "{{ harbor_data_dir }}"
+  changed_when: false
+  no_log: true
+
+- name: Forget the earlier install when a reinstall is asked for
+  ansible.builtin.file:
+    path: "{{ harbor_dir }}/.nms-installed-{{ harbor_version }}"
+    state: absent
+  when: harbor_reinstall | bool
+
+- name: Run the Harbor installer
+  ansible.builtin.shell: "bash install.sh && touch .nms-installed-{{ harbor_version }}"
+  args:
+    chdir: "{{ harbor_dir }}"
+    creates: "{{ harbor_dir }}/.nms-installed-{{ harbor_version }}"
+
+- name: Wait until Harbor reports healthy
+  ansible.builtin.uri:
+    url: "{{ tls_scheme }}://127.0.0.1:{{ harbor_https_port if tls_active | bool else harbor_http_port }}/api/v2.0/health"
+    status_code: 200
+    validate_certs: false
+  register: harbor_health
+  until: harbor_health.status == 200
+  retries: 30
+  delay: 10

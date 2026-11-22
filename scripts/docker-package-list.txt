@@ -1,0 +1,5 @@
+# Docker packages for the offline repository (from download.docker.com)
+docker-ce
+docker-ce-cli
+containerd.io
+docker-compose-plugin

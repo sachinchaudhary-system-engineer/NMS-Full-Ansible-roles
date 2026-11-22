@@ -5,10 +5,21 @@ name: {{ inventory_hostname }}
 restapi:
   listen: 0.0.0.0:{{ patroni_restapi_port }}
   connect_address: {{ database_ip }}:{{ patroni_restapi_port }}
+{% if tls_active | bool %}
+  certfile: {{ patroni_config_dir }}/tls/server.crt
+  keyfile: {{ patroni_config_dir }}/tls/server.key
+{% endif %}
 
 etcd3:
   hosts: {% for h in groups['database'] %}{{ hostvars[h].ansible_host | default(h) }}:{{ etcd_client_port }}{{ ',' if not loop.last else '' }}{% endfor %}
 
+{% if tls_active | bool %}
+  protocol: https
+  cacert: {{ patroni_config_dir }}/tls/ca.crt
+
+ctl:
+  insecure: true
+{% endif %}
 
 bootstrap:
   dcs:
@@ -38,6 +49,12 @@ postgresql:
   data_dir: {{ database_data_dir }}
   bin_dir: {{ database_bin_dir }}
   pgpass: /tmp/pgpass0
+{% if tls_active | bool %}
+  parameters:
+    ssl: 'on'
+    ssl_cert_file: {{ patroni_config_dir }}/tls/server.crt
+    ssl_key_file: {{ patroni_config_dir }}/tls/server.key
+{% endif %}
   authentication:
     superuser:
       username: postgres

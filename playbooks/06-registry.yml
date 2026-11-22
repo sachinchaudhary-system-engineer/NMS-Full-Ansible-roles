@@ -1,6 +1,0 @@
----
-- name: Git and image registry server (GitLab)
-  hosts: registry
-  become: true
-  roles:
-    - gitlab

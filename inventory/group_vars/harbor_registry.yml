@@ -1,0 +1,6 @@
+---
+# Variables for the harbor_registry group. Fill in the CHANGE_ME values at the client site.
+harbor_hostname: "CHANGE_ME_HOSTNAME"   # name or IP that clients use to reach Harbor. Not localhost.
+harbor_admin_password: "CHANGE_ME"
+harbor_db_password: "CHANGE_ME"         # Harbor's internal database password
+harbor_data_dir: /data                  # where Harbor stores its images

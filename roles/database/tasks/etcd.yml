@@ -23,6 +23,31 @@
     group: root
     mode: "0755"
 
+- name: Create the etcd HTTPS folder
+  ansible.builtin.file:
+    path: /etc/etcd/tls
+    state: directory
+    owner: etcd
+    group: etcd
+    mode: "0750"
+  when: tls_active | bool
+
+- name: Copy the HTTPS files for etcd
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/etc/etcd/tls/{{ item.dest }}"
+    owner: etcd
+    group: etcd
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: "{{ tls_cert_file }}", dest: server.crt, mode: "0644" }
+    - { src: "{{ tls_key_file }}", dest: server.key, mode: "0600" }
+    - { src: "{{ tls_ca_effective }}", dest: ca.crt, mode: "0644" }
+  loop_control:
+    label: "{{ item.dest }}"
+  when: tls_active | bool
+  notify: Restart etcd
+
 - name: Unpack etcd from the bundle
   ansible.builtin.unarchive:
     src: "{{ bundle_dir }}/third-party-binaries/etcd-{{ etcd_version }}-linux-amd64.tar.gz"
@@ -69,7 +94,10 @@
     daemon_reload: true
 
 - name: Wait until etcd is healthy
-  ansible.builtin.command: "/usr/local/bin/etcdctl --endpoints=http://127.0.0.1:{{ etcd_client_port }} endpoint health"
+  ansible.builtin.command: >-
+    /usr/local/bin/etcdctl
+    {{ '--insecure-skip-tls-verify' if tls_active | bool else '' }}
+    --endpoints={{ tls_scheme }}://127.0.0.1:{{ etcd_client_port }} endpoint health
   register: database_etcd_health
   until: database_etcd_health.rc == 0
   retries: 15

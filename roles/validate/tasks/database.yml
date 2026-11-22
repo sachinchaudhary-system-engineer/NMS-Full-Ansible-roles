@@ -7,13 +7,13 @@
   changed_when: false
 
 - name: Check the etcd cluster is healthy
-  ansible.builtin.command: "/usr/local/bin/etcdctl --endpoints={{ validate_etcd_endpoints }} endpoint health"
+  ansible.builtin.command: "/usr/local/bin/etcdctl {{ validate_tls_flag }} --endpoints={{ validate_etcd_endpoints }} endpoint health"
   vars:
-    validate_etcd_endpoints: "{% for h in groups['database'] %}http://{{ hostvars[h].ansible_host | default(h) }}:{{ validate_etcd_port }}{{ ',' if not loop.last else '' }}{% endfor %}"
+    validate_etcd_endpoints: "{% for h in groups['database'] %}{{ tls_scheme }}://{{ hostvars[h].ansible_host | default(h) }}:{{ validate_etcd_port }}{{ ',' if not loop.last else '' }}{% endfor %}"
   changed_when: false
 
 - name: List the etcd members
-  ansible.builtin.command: "/usr/local/bin/etcdctl --endpoints=http://127.0.0.1:{{ validate_etcd_port }} member list"
+  ansible.builtin.command: "/usr/local/bin/etcdctl {{ validate_tls_flag }} --endpoints={{ tls_scheme }}://127.0.0.1:{{ validate_etcd_port }} member list"
   register: validate_etcd_members
   changed_when: false
 
@@ -26,8 +26,9 @@
 
 - name: Read the cluster state from Patroni
   ansible.builtin.uri:
-    url: "http://{{ validate_ip }}:{{ validate_patroni_port }}/cluster"
+    url: "{{ tls_scheme }}://{{ validate_ip }}:{{ validate_patroni_port }}/cluster"
     return_content: true
+    validate_certs: false
   register: validate_cluster
 
 - name: Check the Patroni cluster is healthy

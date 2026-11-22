@@ -36,3 +36,28 @@
   loop: "{{ database_bundle_files.results }}"
   loop_control:
     label: "{{ item.item }}"
+
+- name: Check the HTTPS files are given as a pair
+  ansible.builtin.assert:
+    that:
+      - (tls_cert_file | length > 0) == (tls_key_file | length > 0)
+    fail_msg: "Set both tls_cert_file and tls_key_file in inventory/group_vars/all.yml, or leave both empty to use plain HTTP"
+    quiet: true
+
+- name: Look for the HTTPS files on the controller
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  delegate_to: localhost
+  become: false
+  register: database_tls_files
+  loop: "{{ [tls_cert_file, tls_key_file, tls_ca_effective] if tls_active | bool else [] }}"
+
+- name: Stop if an HTTPS file is missing
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists
+    fail_msg: "HTTPS file not found on the controller: {{ item.item }}"
+    quiet: true
+  loop: "{{ database_tls_files.results }}"
+  loop_control:
+    label: "{{ item.item }}"

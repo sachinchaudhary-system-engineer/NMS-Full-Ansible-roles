@@ -73,3 +73,4 @@ postgresql-contrib
 python3-psycopg2
 python3-pyyaml
 valkey
+rpm-plugin-selinux

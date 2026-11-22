@@ -1,0 +1,35 @@
+---
+- name: Stop if site values are still placeholders
+  ansible.builtin.assert:
+    that:
+      - "'CHANGE_ME' not in harbor_hostname"
+      - "'CHANGE_ME' not in harbor_admin_password"
+      - "'CHANGE_ME' not in harbor_db_password"
+      - harbor_hostname not in ['localhost', '127.0.0.1']
+    fail_msg: "Fill in every CHANGE_ME value in inventory/group_vars/harbor_registry.yml. harbor_hostname must not be localhost."
+    quiet: true
+
+- name: Check the HTTPS files are given as a pair
+  ansible.builtin.assert:
+    that:
+      - (tls_cert_file | length > 0) == (tls_key_file | length > 0)
+    fail_msg: "Set both tls_cert_file and tls_key_file in inventory/group_vars/all.yml, or leave both empty to use plain HTTP"
+    quiet: true
+
+- name: Look for the bundle and HTTPS files on the controller
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  delegate_to: localhost
+  become: false
+  register: harbor_files
+  loop: "{{ [bundle_dir ~ '/third-party-binaries/harbor-offline-installer-' ~ harbor_version ~ '.tgz'] + ([tls_cert_file, tls_key_file] if tls_active | bool else []) }}"
+
+- name: Stop if a file is missing
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists
+    fail_msg: "Not found on the controller: {{ item.item }}"
+    quiet: true
+  loop: "{{ harbor_files.results }}"
+  loop_control:
+    label: "{{ item.item }}"

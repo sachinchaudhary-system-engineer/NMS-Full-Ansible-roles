@@ -24,6 +24,31 @@
     group: postgres
     mode: "0750"
 
+- name: Create the Patroni HTTPS folder
+  ansible.builtin.file:
+    path: "{{ patroni_config_dir }}/tls"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: "0750"
+  when: tls_active | bool
+
+- name: Copy the HTTPS files for Patroni and PostgreSQL
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ patroni_config_dir }}/tls/{{ item.dest }}"
+    owner: postgres
+    group: postgres
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: "{{ tls_cert_file }}", dest: server.crt, mode: "0644" }
+    - { src: "{{ tls_key_file }}", dest: server.key, mode: "0600" }
+    - { src: "{{ tls_ca_effective }}", dest: ca.crt, mode: "0644" }
+  loop_control:
+    label: "{{ item.dest }}"
+  when: tls_active | bool
+  notify: Restart patroni
+
 - name: Create the PostgreSQL data folder
   ansible.builtin.file:
     path: "{{ database_data_dir }}"
@@ -62,8 +87,9 @@
 
 - name: Wait for the Patroni REST API
   ansible.builtin.uri:
-    url: "http://{{ database_ip }}:{{ patroni_restapi_port }}/health"
+    url: "{{ tls_scheme }}://{{ database_ip }}:{{ patroni_restapi_port }}/health"
     status_code: 200
+    validate_certs: false
   register: database_patroni_health
   until: database_patroni_health.status == 200
   retries: 30

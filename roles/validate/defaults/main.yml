@@ -4,3 +4,4 @@ validate_check_vip: true
 validate_ip: "{{ ansible_host | default(inventory_hostname) }}"
 validate_etcd_port: 2379
 validate_patroni_port: 8008
+validate_tls_flag: "{{ '--insecure-skip-tls-verify' if tls_active | bool else '' }}"

@@ -1,0 +1,9 @@
+---
+- name: Check the settings and the bundle
+  ansible.builtin.import_tasks: preflight.yml
+
+- name: Install Docker
+  ansible.builtin.import_tasks: packages.yml
+
+- name: Install Harbor
+  ansible.builtin.import_tasks: install.yml

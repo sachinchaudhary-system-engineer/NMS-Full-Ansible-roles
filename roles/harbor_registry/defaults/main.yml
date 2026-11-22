@@ -1,0 +1,16 @@
+---
+harbor_version: v2.15.0      # must match HARBOR_VERSION in scripts/pinned-versions.env
+harbor_unpack_dir: /opt
+harbor_dir: "{{ harbor_unpack_dir }}/harbor"
+harbor_http_port: 80
+harbor_https_port: 443
+harbor_tls_dir: /etc/harbor/tls
+# Set true to run Harbor's installer again, for example after changing a setting
+harbor_reinstall: false
+
+harbor_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-compose-plugin
+  - python3-pyyaml

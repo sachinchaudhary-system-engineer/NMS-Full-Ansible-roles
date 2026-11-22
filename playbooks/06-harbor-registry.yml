@@ -1,0 +1,6 @@
+---
+- name: Set up the Harbor registry
+  hosts: harbor_registry
+  become: true
+  roles:
+    - harbor_registry
