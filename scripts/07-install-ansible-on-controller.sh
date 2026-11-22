@@ -19,7 +19,7 @@ enabled=1
 gpgcheck=0
 REPO
 
-sudo dnf --disablerepo='*' --enablerepo=offline install -y python3-pip python3-pip-wheel git rsync
+sudo dnf --disablerepo='*' --enablerepo=offline install -y python3-pip python3-pip-wheel rsync
 
 # 2. ansible-core from the wheels, with no internet
 sudo mkdir -p "$VENV" "$COLLECTIONS"

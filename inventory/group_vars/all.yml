@@ -27,3 +27,4 @@ tls_ca_file: ''      # optional: the CA that signed the certificate
 tls_active: "{{ (tls_cert_file | length > 0) and (tls_key_file | length > 0) }}"
 tls_scheme: "{{ 'https' if tls_active | bool else 'http' }}"
 tls_ca_effective: "{{ tls_ca_file if tls_ca_file | length > 0 else tls_cert_file }}"
+offline_repo_url: "CHANGE_ME"   # set to http://<repo-server>:8080
